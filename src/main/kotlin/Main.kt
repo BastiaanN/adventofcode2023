@@ -1,7 +1,11 @@
-fun main(args: Array<String>) {
-    println("Hello World!")
+import puzzle.DayOne
 
-    // Try adding program arguments via Run/Debug configuration.
-    // Learn more about running applications: https://www.jetbrains.com/help/idea/running-applications.html.
-    println("Program arguments: ${args.joinToString()}")
+
+val puzzles = listOf(DayOne())
+
+fun main(args: Array<String>) {
+    puzzles.forEach { puzzle ->
+        println("Puzzle '${puzzle::class.simpleName}' solution first part: ${puzzle.solveFirst()}")
+        println("Puzzle '${puzzle::class.simpleName}' solution second part: ${puzzle.solveSecond()}")
+    }
 }
