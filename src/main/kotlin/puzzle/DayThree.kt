@@ -14,50 +14,25 @@ class DayThree : Puzzle {
 
             val currentRow = schematicLines[rowNo]
 
-            var numStartIdx = -1
-            var numEndIdx = -1
-            var columnNo = 0
+            "\\d+".toRegex().findAll(currentRow).forEach { matchResult ->
 
-            while (columnNo < currentRow.length) {
+                val boxSize = calcBoxSize(
+                    matchResult.range.start, matchResult.range.endInclusive,
+                    rowNo, schematicLines.size, currentRow.length
+                )
 
-                // Find start of numeric part
-                if (numStartIdx < 0 && currentRow[columnNo].isDigit()) {
-                    numStartIdx = columnNo
+                val hasAdjancentSymbol = schematicLines.subList(boxSize.rowStart, boxSize.rowEnd + 1)
+                    .map { s -> s.substring(boxSize.colStart, boxSize.colEnd + 1) }
+                    .filter { s -> s.contains("[^\\d.]".toRegex()) }
+                    .firstOrNull() != null
+
+                if (hasAdjancentSymbol) {
+                    sum += matchResult.value.toInt()
                 }
 
-                // Find end of numeric part
-                if (numStartIdx >= 0 && !currentRow[columnNo].isDigit()) {
-                    numEndIdx = columnNo - 1
-                } else if (numStartIdx >= 0 && columnNo == currentRow.length - 1) {
-                    numEndIdx = columnNo
-                }
-
-                // If we have a startidx AND endidx, we should do something with it
-                if (numStartIdx >= 0 && numEndIdx >= 0) {
-                    // Yay, digits!
-                    val numericPart = currentRow.substring(numStartIdx, numEndIdx + 1)
-
-                    val boxSize = calcBoxSize(numStartIdx, numEndIdx, rowNo, schematicLines.size, currentRow.length)
-                    val hasAdjancentSymbol = schematicLines.subList(boxSize.rowStart, boxSize.rowEnd + 1)
-                        .map { s -> s.substring(boxSize.colStart, boxSize.colEnd + 1) }
-                        .filter { s -> s.contains("[^\\d.]".toRegex()) }
-                        .firstOrNull() != null
-
-                    if (hasAdjancentSymbol) {
-                        sum += numericPart.toInt()
-                    }
-
-                    // Skip over all the matched columns.
-                    columnNo = numEndIdx + 1
-
-                    // Reset start and end index.
-                    numStartIdx = -1
-                    numEndIdx = -1
-                } else {
-                    columnNo += 1
-                }
             }
         }
+
         return sum.toString()
     }
 
@@ -70,56 +45,28 @@ class DayThree : Puzzle {
 
             val currentRow = schematicLines[rowNo]
 
-            var numStartIdx = -1
-            var numEndIdx = -1
-            var columnNo = 0
+            "\\d+".toRegex().findAll(currentRow).forEach { matchResult ->
 
-            while (columnNo < currentRow.length) {
+                // Find adjacent gears and store the part number with the gear index if found.
+                val boxSize = calcBoxSize(
+                    matchResult.range.start, matchResult.range.endInclusive,
+                    rowNo, schematicLines.size, currentRow.length
+                )
 
-                // Find start of numeric part
-                if (numStartIdx < 0 && currentRow[columnNo].isDigit()) {
-                    numStartIdx = columnNo
-                }
-
-                // Find end of numeric part
-                if (numStartIdx >= 0 && !currentRow[columnNo].isDigit()) {
-                    numEndIdx = columnNo - 1
-                } else if (numStartIdx >= 0 && columnNo == currentRow.length - 1) {
-                    numEndIdx = columnNo
-                }
-
-                // If we have a startidx AND endidx, we should do something with it
-                if (numStartIdx >= 0 && numEndIdx >= 0) {
-
-                    // Yay, digits!
-                    val numericPart = currentRow.substring(numStartIdx, numEndIdx + 1)
-
-                    // Find adjacent gears and store the part number with the gear index if found.
-                    val boxSize = calcBoxSize(numStartIdx, numEndIdx, rowNo, schematicLines.size, currentRow.length)
-                    for(searchRowIdx in boxSize.rowStart..<boxSize.rowEnd + 1) {
-                        for(searchColIdx in boxSize.colStart ..<boxSize.colEnd + 1) {
-                            if(schematicLines[searchRowIdx][searchColIdx] == '*') {
-                                gearIdxToPartNumbers.putIfAbsent("${searchRowIdx}_${searchColIdx}", mutableListOf())
-                                gearIdxToPartNumbers["${searchRowIdx}_${searchColIdx}"]?.add(numericPart.toInt())
-                            }
+                for (searchRowIdx in boxSize.rowStart..<boxSize.rowEnd + 1) {
+                    for (searchColIdx in boxSize.colStart..<boxSize.colEnd + 1) {
+                        if (schematicLines[searchRowIdx][searchColIdx] == '*') {
+                            gearIdxToPartNumbers.putIfAbsent("${searchRowIdx}_${searchColIdx}", mutableListOf())
+                            gearIdxToPartNumbers["${searchRowIdx}_${searchColIdx}"]?.add(matchResult.value.toInt())
                         }
                     }
-
-                    // Skip over all the matched columns.
-                    columnNo = numEndIdx + 1
-
-                    // Reset start and end index.
-                    numStartIdx = -1
-                    numEndIdx = -1
-                } else {
-                    columnNo += 1
                 }
             }
         }
 
         return gearIdxToPartNumbers
             .filter { entry -> entry.value.size == 2 }
-            .map { entry -> entry.value.reduce {acc, i -> acc.times(i) } }
+            .map { entry -> entry.value.reduce { acc, i -> acc.times(i) } }
             .sum().toString()
 
     }
