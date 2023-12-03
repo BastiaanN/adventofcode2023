@@ -1,9 +1,10 @@
 import puzzle.DayOne
+import puzzle.DayThree
 import puzzle.DayTwo
 import puzzle.Puzzle
 
 
-val puzzles = listOf(DayOne(), DayTwo())
+val puzzles = listOf(DayOne(), DayTwo(), DayThree())
 
 fun main(args: Array<String>) {
     if(args.isEmpty()) {

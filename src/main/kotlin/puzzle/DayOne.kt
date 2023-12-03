@@ -1,12 +1,14 @@
 package puzzle
 
+import java.io.File
+
 class DayOne : Puzzle {
 
-    val calibrationDocument = this::class.java.getResource("/DayOne-CalibrationDocument.txt")
+    val calibrationDocument = File("src/main/resources/DayOne-CalibrationDocument.txt")
 
     override fun solveFirst(): String {
         var sum = 0
-        for (line in calibrationDocument.openStream().bufferedReader().readLines()) {
+        for (line in calibrationDocument.readLines()) {
             val onlyDigits = line.filter { c -> c.isDigit() }
             sum += "${onlyDigits.first()}${onlyDigits.last()}".toInt()
         }
@@ -15,7 +17,7 @@ class DayOne : Puzzle {
 
     override fun solveSecond(): String {
         var sum = 0
-        for (lineWithWrittenNumbers in calibrationDocument.openStream().bufferedReader().readLines()) {
+        for (lineWithWrittenNumbers in calibrationDocument.readLines()) {
             val onlyDigits = transformStringToOnlyDigits(lineWithWrittenNumbers)
             sum += "${onlyDigits.first()}${onlyDigits.last()}".toInt()
         }

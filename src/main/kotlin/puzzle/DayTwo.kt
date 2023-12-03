@@ -1,8 +1,10 @@
 package puzzle
 
+import java.io.File
+
 class DayTwo : Puzzle {
 
-    val games = this::class.java.getResource("/DayTwo-Games.txt")
+    val games = File("src/main/resources/DayTwo-Games.txt")
 
     override fun solveFirst(): String {
 
@@ -26,7 +28,7 @@ class DayTwo : Puzzle {
 
     private fun DayTwo.parseGameList(): MutableList<Game> {
         val gameList = mutableListOf<Game>()
-        for ((index, line) in games.openStream().bufferedReader().readLines().withIndex()) {
+        for ((index, line) in games.readLines().withIndex()) {
             val game = Game(index + 1)
             gameList.add(game)
             line.split(":").last().split(";")
