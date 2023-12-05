@@ -1,10 +1,7 @@
-import puzzle.DayOne
-import puzzle.DayThree
-import puzzle.DayTwo
-import puzzle.Puzzle
+import puzzle.*
 
 
-val puzzles = listOf(DayOne(), DayTwo(), DayThree())
+val puzzles = listOf(DayOne(), DayTwo(), DayThree(), DayFour())
 
 fun main(args: Array<String>) {
     if(args.isEmpty()) {
