@@ -22,30 +22,25 @@ class DayFour : Puzzle {
     }
 
     override fun solveSecond(): String {
-        return checkCards(scratchCards.readLines()).toString()
-    }
+        val cards = scratchCards.readLines()
 
-    fun checkCards(cards : List<String>): Int {
+        val cardToAmountOfCards = (1 .. cards.size).map { i -> i to 1 }.toMap().toMutableMap()
+        for(cardIdx in cards.indices) {
 
-        //println("First line is: ${cards[0]}")
-
-        var copiedCards = 0
-        for(cardidx in cards.indices) {
-            val splittedLine = cards[cardidx].split(": ").last().split("\\s*\\|\\s*".toRegex())
+            val splittedLine = cards[cardIdx].split(": ").last().split("\\s*\\|\\s*".toRegex())
             val winningNumbers = splittedLine[0].split("\\s+".toRegex())
             val cardNumbers = splittedLine[1].split("\\s+".toRegex())
-
             val numberOfWinningNumbers = cardNumbers.filter { s -> s in winningNumbers }.size
-            val maxCardsToCopy = Math.min(numberOfWinningNumbers, (cards.size - 1) - cardidx)
-            if(maxCardsToCopy > 0) {
-                for (i in 1.rangeUntil(maxCardsToCopy + 1)) {
-                    copiedCards += checkCards(cards.subList(cardidx + i, cards.size))
+
+            if(numberOfWinningNumbers > 0) {
+                for(i in 1..numberOfWinningNumbers) {
+                    cardToAmountOfCards[1 + (cardIdx + i)] = cardToAmountOfCards[1 + (cardIdx + i)]!! + cardToAmountOfCards[1 + (cardIdx)]!!
                 }
             }
 
-            copiedCards += maxCardsToCopy
         }
 
-        return copiedCards
+        return cardToAmountOfCards.values.sum().toString()
     }
+
 }
