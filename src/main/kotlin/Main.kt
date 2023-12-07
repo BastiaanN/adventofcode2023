@@ -1,7 +1,7 @@
 import puzzle.*
 
 
-val puzzles = listOf(DayOne(), DayTwo(), DayThree(), DayFour(), DayFive())
+val puzzles = listOf(DayOne(), DayTwo(), DayThree(), DayFour(), DayFive(), DaySix())
 
 fun main(args: Array<String>) {
     if(args.isEmpty()) {
