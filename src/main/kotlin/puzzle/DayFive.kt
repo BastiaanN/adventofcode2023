@@ -28,10 +28,18 @@ class DayFive : Puzzle {
     override fun solveSecond(): String {
 
         var almanacLines = almanac.readLines()
-        val seeds = "(\\d+)\\s+(\\d+)".toRegex().findAll(almanacLines[0]).toList().map { matchResult ->
-            val rangeStart = matchResult.groups[1]!!.value.toLong()
-            val rangeLength = matchResult.groups[2]!!.value.toLong()
-            rangeStart.rangeUntil(rangeStart + rangeLength)
+
+        val seedRanges = mutableListOf<LongRange>()
+        for (matchResult in "(\\d+)\\s+(\\d+)".toRegex().findAll(almanacLines[0]).toList()) {
+            var rangeStart = matchResult.groups[1]!!.value.toLong()
+            val rangeEnd = rangeStart + matchResult.groups[2]!!.value.toLong()
+
+            val offset=10000000
+            while(rangeEnd - rangeStart > offset) {
+                val subrangeEnd = Math.min(rangeEnd, rangeStart + offset)
+                seedRanges.add(LongRange(rangeStart, subrangeEnd))
+                rangeStart = subrangeEnd
+            }
         }
 
         // Pre-fill seed map
@@ -39,12 +47,11 @@ class DayFive : Puzzle {
 
         var lowestLocation = Long.MAX_VALUE
         var futures = mutableListOf<CompletableFuture<Long>>()
-        seeds.forEach { seedRange ->
+        seedRanges.forEach { seedRange ->
             val future = CompletableFuture.supplyAsync {
                 findLowestLocationFromSeeds(seedRange)
             }
             futures.add(future)
-            future.whenComplete { t, u -> println("Computing range: ${seedRange} completed.") }
         }
 
         // Wait for all the futures.

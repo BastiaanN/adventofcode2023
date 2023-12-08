@@ -1,4 +1,5 @@
 import puzzle.*
+import kotlin.system.measureTimeMillis
 
 
 val puzzles = listOf(DayOne(), DayTwo(), DayThree(), DayFour(), DayFive(), DaySix())
@@ -14,7 +15,15 @@ fun main(args: Array<String>) {
     }
 }
 
+
 fun runPuzzle(puzzle: Puzzle) {
-    println("Puzzle '${puzzle::class.simpleName}' solution first part: ${puzzle.solveFirst()}")
-    println("Puzzle '${puzzle::class.simpleName}' solution second part: ${puzzle.solveSecond()}")
+    var time = measureTimeMillis {
+        println("Puzzle '${puzzle::class.simpleName}' solution first part: ${puzzle.solveFirst()}")
+    }
+    println("\tFirst part completed in ${time / 1000} seconds")
+
+    time = measureTimeMillis {
+        println("Puzzle '${puzzle::class.simpleName}' solution second part: ${puzzle.solveSecond()}")
+    }
+    println("\tSecond part completed in ${time / 1000} seconds")
 }
