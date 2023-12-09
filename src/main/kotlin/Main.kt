@@ -2,7 +2,7 @@ import puzzle.*
 import kotlin.system.measureTimeMillis
 
 
-val puzzles = listOf(DayOne(), DayTwo(), DayThree(), DayFour(), DayFive(), DaySix(), DaySeven(), DayEight())
+val puzzles = listOf(DayOne(), DayTwo(), DayThree(), DayFour(), DayFive(), DaySix(), DaySeven(), DayEight(), DayNine())
 
 fun main(args: Array<String>) {
     if(args.isEmpty()) {
@@ -20,10 +20,10 @@ fun runPuzzle(puzzle: Puzzle) {
     var time = measureTimeMillis {
         println("Puzzle '${puzzle::class.simpleName}' solution first part: ${puzzle.solveFirst()}")
     }
-    println("\tFirst part completed in ${time / 1000} seconds")
+    println("\tFirst part completed in ${time / 1000.0} seconds")
 
     time = measureTimeMillis {
         println("Puzzle '${puzzle::class.simpleName}' solution second part: ${puzzle.solveSecond()}")
     }
-    println("\tSecond part completed in ${time / 1000} seconds")
+    println("\tSecond part completed in ${time / 1000.0} seconds")
 }
