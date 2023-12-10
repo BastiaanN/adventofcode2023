@@ -1,16 +1,16 @@
 import puzzle.*
 import kotlin.system.measureTimeMillis
 
-
-val puzzles = listOf(DayOne(), DayTwo(), DayThree(), DayFour(), DayFive(), DaySix(), DaySeven(), DayEight(), DayNine())
+val puzzles =
+    listOf(DayOne(), DayTwo(), DayThree(), DayFour(), DayFive(), DaySix(), DaySeven(), DayEight(), DayNine(), DayTen())
 
 fun main(args: Array<String>) {
-    if(args.isEmpty()) {
+    if (args.isEmpty()) {
         puzzles.forEach(::runPuzzle)
     } else {
         val puzzleNo = args.get(0).toIntOrNull()
-        if(puzzleNo != null) {
-            runPuzzle(puzzles[puzzleNo-1])
+        if (puzzleNo != null) {
+            runPuzzle(puzzles[puzzleNo - 1])
         }
     }
 }
