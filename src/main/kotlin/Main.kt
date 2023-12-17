@@ -2,7 +2,19 @@ import puzzle.*
 import kotlin.system.measureTimeMillis
 
 val puzzles =
-    listOf(DayOne(), DayTwo(), DayThree(), DayFour(), DayFive(), DaySix(), DaySeven(), DayEight(), DayNine(), DayTen())
+    listOf(
+        DayOne(),
+        DayTwo(),
+        DayThree(),
+        DayFour(),
+        DayFive(),
+        DaySix(),
+        DaySeven(),
+        DayEight(),
+        DayNine(),
+        DayTen(),
+        DayEleven()
+    )
 
 fun main(args: Array<String>) {
     if (args.isEmpty()) {
