@@ -37,8 +37,8 @@ class DayTwelve : Puzzle {
 
             future.whenComplete { result, _ ->
 //                println("${result} possibilities for line ${unfoldedLine}")
-                completedLines= completedLines + 1
-                String.format("%.2f% complete..", (100.00/lines.size) * completedLines)
+                completedLines += 1
+                println(String.format("%.2f%% complete..", (100.00/lines.size) * completedLines))
             }
 
             // Make sync.
@@ -53,7 +53,6 @@ class DayTwelve : Puzzle {
             sum += future.get()
         }
 
-        // 7047 --> RIGHT!!!!!
         return sum.toString()
     }
 
