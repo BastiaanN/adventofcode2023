@@ -36,13 +36,13 @@ class DayTwelve : Puzzle {
             }
 
             future.whenComplete { result, _ ->
-                println("${result} possibilities for line ${unfoldedLine}")
-//                completedLines= completedLines + 1
-//                String.format("%.2f% complete..", (100.00/lines.size) * completedLines)
+//                println("${result} possibilities for line ${unfoldedLine}")
+                completedLines= completedLines + 1
+                String.format("%.2f% complete..", (100.00/lines.size) * completedLines)
             }
 
             // Make sync.
-            future.get()
+//            future.get()
 
             futures.add(future)
 
