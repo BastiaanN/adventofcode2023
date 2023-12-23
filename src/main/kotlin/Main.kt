@@ -13,7 +13,8 @@ val puzzles =
         DayEight(),
         DayNine(),
         DayTen(),
-        DayEleven()
+        DayEleven(),
+        DayTwelve()
     )
 
 fun main(args: Array<String>) {
