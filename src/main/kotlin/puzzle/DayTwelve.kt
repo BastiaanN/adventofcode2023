@@ -41,11 +41,7 @@ class DayTwelve : Puzzle {
                 println(String.format("%.2f%% complete..", (100.00/lines.size) * completedLines))
             }
 
-            // Make sync.
-//            future.get()
-
             futures.add(future)
-
         }
 
         // Calculate all futures.
