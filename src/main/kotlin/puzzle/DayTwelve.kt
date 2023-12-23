@@ -1,6 +1,7 @@
 package puzzle
 
 import java.io.File
+import java.util.concurrent.CompletableFuture
 
 class DayTwelve : Puzzle {
 
@@ -18,19 +19,38 @@ class DayTwelve : Puzzle {
     }
 
     override fun solveSecond(): String {
+
         var sum = 0L
-        for (line in springs.readLines()) {
+        var completedLines = 0
+        val futures = mutableListOf<CompletableFuture<Long>>()
+        val lines = springs.readLines()
+        for (line in lines) {
 
             var lineParts = line.split(" ")
             val extendedSprings = ("${lineParts[0]}?").repeat(5)
             val unfoldedLine = extendedSprings.substring(0, extendedSprings.length - 1) +
                     " " + (lineParts[1] + ",").repeat(5).trimEnd(',')
 
+            val future = CompletableFuture.supplyAsync {
+                calculatePossibilitiesForLine(unfoldedLine)
+            }
 
-            // We should do it times 5.
-            val possibilities = calculatePossibilitiesForLine(unfoldedLine)
-            println("${possibilities} possibilities for line=${line}")
-            sum += possibilities
+            future.whenComplete { result, _ ->
+                println("${result} possibilities for line ${unfoldedLine}")
+//                completedLines= completedLines + 1
+//                String.format("%.2f% complete..", (100.00/lines.size) * completedLines)
+            }
+
+            // Make sync.
+            future.get()
+
+            futures.add(future)
+
+        }
+
+        // Calculate all futures.
+        for (future in futures) {
+            sum += future.get()
         }
 
         // 7047 --> RIGHT!!!!!
@@ -43,13 +63,13 @@ class DayTwelve : Puzzle {
         val arrangements = lineParts[1].split(",").map { s -> s.toInt() }.toTypedArray()
 
         // We need to calculate...
-        return calculatePossibilities(lineParts[0].trim { c -> c == '.' }, arrangements, arrangements.sum())
+        return calculatePossibilities(lineParts[0].trim { c -> c == '.' }.toCharArray(), arrangements, arrangements.sum())
     }
 
-    private fun calculatePossibilities(segment: String, arrangements: Array<Int>, arrangementSum: Int): Long {
+    private fun calculatePossibilities(segment: CharArray, arrangements: Array<Int>, arrangementSum: Int, prevFirstQuestionMarkIdx: Int = 0): Long {
         var possibilities = 0L
 
-//        println("Trying segment: ${segment}")
+//        println("Trying segment: ${segment.concatToString()}")
 
         // Check if there is still a chance this ever becomes a valid arrangement.
         var arrangementIdx = 0
@@ -80,33 +100,59 @@ class DayTwelve : Puzzle {
         // Not enough #/? to get the total arrangement size? Then we stop this flow too.
         if(arrangementSum > numPossibleHashes) return 0
 
-        val mutatedSegmentWithDot = segment.replaceFirst('?', '.')
-        if (isValidSegment(mutatedSegmentWithDot, arrangements, arrangementSum)) {
-            possibilities++
-        } else if (mutatedSegmentWithDot.contains('?')) {
-            possibilities += calculatePossibilities(mutatedSegmentWithDot, arrangements, arrangementSum)
+        var questionMarkIdx = -1
+        for (charIdx in IntRange(prevFirstQuestionMarkIdx, segment.size)) {
+            if(segment[charIdx] == '?') {
+                questionMarkIdx = charIdx
+                break
+            }
         }
 
-        val mutatedSegmentWithHash = segment.replaceFirst('?', '#')
-        if (isValidSegment(mutatedSegmentWithHash, arrangements, arrangementSum)) {
+        // Create copy of array.
+        val mutatedSegment = segment.copyOf()
+
+        mutatedSegment[questionMarkIdx] = '.'
+        if (isValidSegment(mutatedSegment, arrangements, arrangementSum)) {
             possibilities++
-        } else if (mutatedSegmentWithHash.contains('?')) {
-            possibilities += calculatePossibilities(mutatedSegmentWithHash, arrangements, arrangementSum)
+        } else if (mutatedSegment.contains('?')) {
+            possibilities += calculatePossibilities(mutatedSegment, arrangements, arrangementSum, questionMarkIdx)
+        }
+
+        mutatedSegment[questionMarkIdx] = '#'
+        if (isValidSegment(mutatedSegment, arrangements, arrangementSum)) {
+            possibilities++
+        } else if (mutatedSegment.contains('?')) {
+            possibilities += calculatePossibilities(mutatedSegment, arrangements, arrangementSum, questionMarkIdx)
         }
 
         return possibilities
     }
 
-    private fun isValidSegment(segment: String, arrangements: Array<Int>, arrangementSum: Int): Boolean {
+    private fun isValidSegment(segment: CharArray, arrangements: Array<Int>, arrangementSum: Int): Boolean {
         // If contains ? we are not done yet.
-        if (segment.contains("?")) return false
+        if (segment.contains('?')) return false
         // Not same
         if (segment.count { c -> c == '#' } != arrangementSum) return false
 
-        val splittedSegments = segment.split(".").filter { s -> s.isNotEmpty() }
-        
-        return splittedSegments.size == arrangements.size &&
-                arrangements.filterIndexed() { index, i -> splittedSegments[index].length != i }.isEmpty()
+//        val splittedSegments = segment.concatToString().split(".").filter { s -> s.isNotEmpty() }
+//
+//        return splittedSegments.size == arrangements.size &&
+//                arrangements.filterIndexed() { index, i -> splittedSegments[index].length != i }.isEmpty()
+
+        var arrangementIdx = 0
+        var hashLength = 0
+        for (charIdx in segment.indices) {
+            if(segment[charIdx] == '#') hashLength++
+            if((segment[charIdx] != '#' || charIdx == segment.size -1) && hashLength > 0) {
+                if(arrangementIdx >= arrangements.size || hashLength != arrangements[arrangementIdx++]) {
+                    return false
+                }
+                hashLength = 0
+            }
+        }
+
+        return true
+
     }
 
 }
