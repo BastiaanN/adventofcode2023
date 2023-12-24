@@ -40,13 +40,10 @@ class DayTwelve : Puzzle {
             future.whenComplete { result, _ ->
 //                println("${result} possibilities for line ${unfoldedLine}")
                 completedLines += 1
-                println(String.format("%.2f%% complete..", (100.00/lines.size) * completedLines))
+                println(String.format("%.2f%% complete..", (100.00 / lines.size) * completedLines))
             }
 
             futures.add(future)
-
-            // Make sync to test changes
-            future.get()
         }
 
         // Calculate all futures.
@@ -62,59 +59,78 @@ class DayTwelve : Puzzle {
         val lineParts = line.replace("\\.{2,}".toRegex(), ".").split(" ")
         val arrangements = lineParts[1].split(",").map { s -> s.toInt() }.toTypedArray()
 
+        // Count number of questionmarks and number of hashes.
+        val segmentInfo = SegmentInfo(
+            arrangements,
+            arrangements.sum(),
+            lineParts[0].count { c -> c == '?' },
+            lineParts[0].count { c -> c == '#' },
+            0,
+            -1)
+
         // We need to calculate...
-        return calculatePossibilities(lineParts[0].trim { c -> c == '.' }.toCharArray(), arrangements, arrangements.sum())
+        return calculatePossibilities(lineParts[0].trim { c -> c == '.' }.toCharArray(), segmentInfo)
     }
 
-    private fun calculatePossibilities(segment: CharArray, arrangements: Array<Int>, arrangementSum: Int, prevFirstQuestionMarkIdx: Int = 0): Long {
+    data class SegmentInfo(
+        val arrangements: Array<Int>,
+        val arrangementSum: Int,
+        var numQuestionMarks: Int,
+        var numHashes: Int,
+        var arrangementIdxToCheck: Int,
+        var lastSegmentIdx: Int
+    )
+
+    private fun calculatePossibilities(
+        segment: CharArray,
+        info: SegmentInfo,
+        prevFirstQuestionMarkIdx: Int = 0
+    ): Long {
         var possibilities = 0L
 
-//        println("Trying segment: ${segment.concatToString()}")
+//       println("Trying segment: ${segment.concatToString()}")
 
         // Check if there is still a chance this ever becomes a valid arrangement.
-        var arrangementIdx = 0
+        var arrangementIdx = info.arrangementIdxToCheck
+        var lastCheckedSegmentIdx = info.lastSegmentIdx
         var hashLength = 0
-        var totalHashesLength = 0
-        var numPossibleHashes = 0
-        var foundQuestionMarks = 0
-        for ((idx, segChar) in segment.withIndex()) {
+        var foundQuestionMark = false
+
+        for (idx in IntRange(lastCheckedSegmentIdx + 1, segment.size - 1)) {
 
             // If there still is a place to fill in we can probably stop as we are not
             // smart enough to predict the rest...
-            when (segChar) {
-                '?' -> {
-                    foundQuestionMarks++
-                    ++numPossibleHashes
-                }
-                '#' -> {
-                    ++numPossibleHashes
-                    ++totalHashesLength
-                }
-            }
+            if (segment[idx] == '?') foundQuestionMark = true
 
             // The number of hashes in this part should equal the expected number of arrangements. If not this would
             // always lead to an impossible combination.
-            if(foundQuestionMarks == 0 || hashLength > 0) {
-                if (segChar == '#') ++hashLength
-                if ((segChar != '#' || idx == segment.size - 1) && hashLength > 0) {
-                    if (arrangementIdx >= arrangements.size ||
-                        (foundQuestionMarks == 0 && hashLength != arrangements[arrangementIdx++]) ||
-                        (foundQuestionMarks > 0 && hashLength > arrangements[arrangementIdx++])) return 0
+            if (!foundQuestionMark || hashLength > 0) {
+                if (segment[idx] == '#') ++hashLength
+                if ((segment[idx] != '#' || idx == segment.size - 1) && hashLength > 0) {
+                    if (arrangementIdx >= info.arrangements.size ||
+                        (!foundQuestionMark && hashLength != info.arrangements[arrangementIdx++]) ||
+                        (foundQuestionMark  && hashLength > info.arrangements[arrangementIdx++])
+                    ) return 0
                     // Reset hashLength.
                     hashLength = 0
+                    // Save idx
+                    if(!foundQuestionMark) lastCheckedSegmentIdx = idx
+                    else arrangementIdx--
                 }
+            } else {
+                break
             }
         }
 
         // Not enough #/? to get the total arrangement size? Then we stop this flow too.
-        if(arrangementSum > numPossibleHashes) return 0
+        if (info.arrangementSum > info.numHashes + info.numQuestionMarks) return 0
 
         // More hashes than expected? stop too.
-        if(totalHashesLength > arrangementSum) return 0
+        if (info.numHashes > info.arrangementSum) return 0
 
         var questionMarkIdx = -1
         for (charIdx in IntRange(prevFirstQuestionMarkIdx, segment.size)) {
-            if(segment[charIdx] == '?') {
+            if (segment[charIdx] == '?') {
                 questionMarkIdx = charIdx
                 break
             }
@@ -122,38 +138,48 @@ class DayTwelve : Puzzle {
 
         // Create copy of array.
         val mutatedSegment = segment.copyOf()
-        val mutatedQuestionMarks = if(foundQuestionMarks > 0) foundQuestionMarks - 1 else 0
+        val mutatedSegmentInfo = info.copy()
+
+        // Question mark will get decreased for next iteration, we can also add the idxes of the valid parts
+        // that we already have checked that do not need to be checked again if we go deeper.
+        mutatedSegmentInfo.numQuestionMarks--
+        mutatedSegmentInfo.lastSegmentIdx = lastCheckedSegmentIdx
+        mutatedSegmentInfo.arrangementIdxToCheck = arrangementIdx
 
         mutatedSegment[questionMarkIdx] = '.'
-        if (isValidSegment(mutatedSegment, arrangements, arrangementSum, mutatedQuestionMarks, totalHashesLength)) {
+        if (isValidSegment(mutatedSegment, mutatedSegmentInfo)) {
             ++possibilities
-        } else if (mutatedQuestionMarks > 0) {
-            possibilities += calculatePossibilities(mutatedSegment, arrangements, arrangementSum, questionMarkIdx)
+        } else if (mutatedSegmentInfo.numQuestionMarks > 0) {
+            possibilities += calculatePossibilities(mutatedSegment, mutatedSegmentInfo, questionMarkIdx)
         }
 
         mutatedSegment[questionMarkIdx] = '#'
-        if (isValidSegment(mutatedSegment, arrangements, arrangementSum, mutatedQuestionMarks, totalHashesLength + 1)) {
+        mutatedSegmentInfo.numHashes++
+        if (isValidSegment(mutatedSegment, mutatedSegmentInfo)) {
             ++possibilities
-        } else if (mutatedQuestionMarks > 0) {
-            possibilities += calculatePossibilities(mutatedSegment, arrangements, arrangementSum, questionMarkIdx)
+        } else if (mutatedSegmentInfo.numQuestionMarks > 0) {
+            possibilities += calculatePossibilities(mutatedSegment, mutatedSegmentInfo, questionMarkIdx)
         }
 
         return possibilities
     }
 
-    private fun isValidSegment(segment: CharArray, arrangements: Array<Int>, arrangementSum: Int,
-                               totalQuestionMarksCnt: Int, totalHashesCnt: Int): Boolean {
+    private fun isValidSegment(
+        segment: CharArray,
+        segmentInfo: SegmentInfo
+    ): Boolean {
         // If contains ? we are not done yet.
-        if (totalQuestionMarksCnt > 0) return false
+        if (segmentInfo.numQuestionMarks > 0) return false
         // Not same
-        if (totalHashesCnt != arrangementSum) return false
+        if (segmentInfo.numHashes != segmentInfo.arrangementSum) return false
 
-        var arrangementIdx = 0
+        var arrangementIdx = segmentInfo.arrangementIdxToCheck
         var hashLength = 0
-        for (charIdx in segment.indices) {
-            if(segment[charIdx] == '#') hashLength++
-            if((segment[charIdx] != '#' || charIdx == segment.size -1) && hashLength > 0) {
-                if(arrangementIdx >= arrangements.size || hashLength != arrangements[arrangementIdx++]) {
+        // All the other parts were already checked by the callee.
+        for (charIdx in IntRange(segmentInfo.lastSegmentIdx + 1, segment.size - 1)) {
+            if (segment[charIdx] == '#') hashLength++
+            if ((segment[charIdx] != '#' || charIdx == segment.size - 1) && hashLength > 0) {
+                if (arrangementIdx >= segmentInfo.arrangements.size || hashLength != segmentInfo.arrangements[arrangementIdx++]) {
                     return false
                 }
                 hashLength = 0
