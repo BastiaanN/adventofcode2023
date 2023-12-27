@@ -20,6 +20,8 @@ class DayTwelve : Puzzle {
 
     override fun solveSecond(): String {
 
+//        return "nope"
+
         var sum = 0L
         var completedLines = 0
         val futures = mutableListOf<CompletableFuture<Long>>()
@@ -113,7 +115,7 @@ class DayTwelve : Puzzle {
                     ) return 0
                     // Reset hashLength.
                     hashLength = 0
-                    // Save idx
+                    // Save idx of end of segment.
                     if(!foundQuestionMark) lastCheckedSegmentIdx = idx
                     else arrangementIdx--
                 }
@@ -127,6 +129,40 @@ class DayTwelve : Puzzle {
 
         // More hashes than expected? stop too.
         if (info.numHashes > info.arrangementSum) return 0
+
+        var questionMarkOnlyPartIdx = -1
+        for (idx in IntRange(lastCheckedSegmentIdx + 1, segment.size - 1)) {
+            if(segment[idx] == '?') {
+                if(questionMarkOnlyPartIdx == -1) questionMarkOnlyPartIdx = idx
+            } else if(segment[idx] == '#' || questionMarkOnlyPartIdx > -1 ) {
+                questionMarkOnlyPartIdx = -1
+                break
+            }
+        }
+
+        // As all the parsed segments are valid thus far we can calculate the possible combinations with the
+        // rest of the segments if the rest exists out of question marks!
+        if(questionMarkOnlyPartIdx >= 0) {
+
+            // We need number of remaining segments.
+            val remainingArrangements = info.arrangements.copyOfRange(arrangementIdx, info.arrangements.size)
+            val neededDots = remainingArrangements.size - 1
+            val remainingSegmentSize = segment.size - questionMarkOnlyPartIdx
+            val availablePositions = remainingSegmentSize - (remainingArrangements.sum() - remainingArrangements.size) - neededDots
+
+//            println("Remaining segment size: ${remainingSegmentSize}")
+//            println("Remaining positions: ${availablePositions}")
+//            println("Remaining arrangements: ${remainingArrangements.joinToString(",")}")
+
+            // Calculate combinations
+            val possies = factorial(availablePositions) /
+                    (factorial(remainingArrangements.size) * factorial(availablePositions - remainingArrangements.size))
+//            println("Possies=${possies}")
+
+            // Do MAGIC!
+            return possies
+
+        }
 
         var questionMarkIdx = -1
         for (charIdx in IntRange(prevFirstQuestionMarkIdx, segment.size)) {
@@ -162,6 +198,15 @@ class DayTwelve : Puzzle {
         }
 
         return possibilities
+    }
+
+    // Function to calculate factorial
+    fun factorial(number: Int): Long {
+        var factorial = 1L
+        for (i in 1..number) {
+            factorial *= i
+        }
+        return factorial
     }
 
     private fun isValidSegment(
