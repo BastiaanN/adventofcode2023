@@ -1,6 +1,7 @@
 package puzzle
 
 import java.io.File
+import java.math.BigInteger
 import java.util.concurrent.CompletableFuture
 
 class DayTwelve : Puzzle {
@@ -20,8 +21,6 @@ class DayTwelve : Puzzle {
 
     override fun solveSecond(): String {
 
-//        return "nope"
-
         var sum = 0L
         var completedLines = 0
         val futures = mutableListOf<CompletableFuture<Long>>()
@@ -40,7 +39,6 @@ class DayTwelve : Puzzle {
             }
 
             future.whenComplete { result, _ ->
-//                println("${result} possibilities for line ${unfoldedLine}")
                 completedLines += 1
                 println(String.format("%.2f%% complete..", (100.00 / lines.size) * completedLines))
             }
@@ -90,12 +88,11 @@ class DayTwelve : Puzzle {
     ): Long {
         var possibilities = 0L
 
-//       println("Trying segment: ${segment.concatToString()}")
-
         // Check if there is still a chance this ever becomes a valid arrangement.
         var arrangementIdx = info.arrangementIdxToCheck
         var lastCheckedSegmentIdx = info.lastSegmentIdx
         var hashLength = 0
+        var incompleteSegmentIdx = -1
         var foundQuestionMark = false
 
         for (idx in IntRange(lastCheckedSegmentIdx + 1, segment.size - 1)) {
@@ -111,13 +108,15 @@ class DayTwelve : Puzzle {
                 if ((segment[idx] != '#' || idx == segment.size - 1) && hashLength > 0) {
                     if (arrangementIdx >= info.arrangements.size ||
                         (!foundQuestionMark && hashLength != info.arrangements[arrangementIdx++]) ||
-                        (foundQuestionMark  && hashLength > info.arrangements[arrangementIdx++])
+                        (foundQuestionMark  && hashLength > info.arrangements[arrangementIdx])
                     ) return 0
-                    // Reset hashLength.
-                    hashLength = 0
+
                     // Save idx of end of segment.
                     if(!foundQuestionMark) lastCheckedSegmentIdx = idx
-                    else arrangementIdx--
+                    else incompleteSegmentIdx = idx - hashLength
+
+                    // Reset hashLength.
+                    hashLength = 0
                 }
             } else {
                 break
@@ -141,26 +140,24 @@ class DayTwelve : Puzzle {
         }
 
         // As all the parsed segments are valid thus far we can calculate the possible combinations with the
-        // rest of the segments if the rest exists out of question marks!
+        // rest of the segments if the rest exists out of question marks! TODO: MAYBE ADD DOTS TOO????
         if(questionMarkOnlyPartIdx >= 0) {
 
             // We need number of remaining segments.
             val remainingArrangements = info.arrangements.copyOfRange(arrangementIdx, info.arrangements.size)
-            val neededDots = remainingArrangements.size - 1
-            val remainingSegmentSize = segment.size - questionMarkOnlyPartIdx
-            val availablePositions = remainingSegmentSize - (remainingArrangements.sum() - remainingArrangements.size) - neededDots
+            if(remainingArrangements.isNotEmpty()) {
+                val neededDots = remainingArrangements.size - 1
+                val remainingSegmentSize = segment.size - questionMarkOnlyPartIdx
+                val availablePositions =
+                    remainingSegmentSize - (remainingArrangements.sum() - remainingArrangements.size) - neededDots
 
-//            println("Remaining segment size: ${remainingSegmentSize}")
-//            println("Remaining positions: ${availablePositions}")
-//            println("Remaining arrangements: ${remainingArrangements.joinToString(",")}")
+                // Calculate combinations
+                val possies = factorial(availablePositions) /
+                        (factorial(remainingArrangements.size) * factorial(availablePositions - remainingArrangements.size))
 
-            // Calculate combinations
-            val possies = factorial(availablePositions) /
-                    (factorial(remainingArrangements.size) * factorial(availablePositions - remainingArrangements.size))
-//            println("Possies=${possies}")
-
-            // Do MAGIC!
-            return possies
+                // Do MAGIC!
+                return possies.toLong()
+            }
 
         }
 
@@ -189,22 +186,41 @@ class DayTwelve : Puzzle {
             possibilities += calculatePossibilities(mutatedSegment, mutatedSegmentInfo, questionMarkIdx)
         }
 
-        mutatedSegment[questionMarkIdx] = '#'
-        mutatedSegmentInfo.numHashes++
-        if (isValidSegment(mutatedSegment, mutatedSegmentInfo)) {
-            ++possibilities
-        } else if (mutatedSegmentInfo.numQuestionMarks > 0) {
-            possibilities += calculatePossibilities(mutatedSegment, mutatedSegmentInfo, questionMarkIdx)
+        if(arrangementIdx <= info.arrangements.lastIndex) {
+
+            // incompleteSegmentIdx is start OF questionmark idx.
+            val startIdx = if(incompleteSegmentIdx > -1) incompleteSegmentIdx else questionMarkIdx
+            val endIdx = startIdx + info.arrangements[arrangementIdx] - 1
+
+            if(endIdx <= segment.size &&
+                questionMarkIdx >= startIdx &&
+                questionMarkIdx <= endIdx &&
+                segment.concatToString(startIdx, endIdx + 1).firstOrNull { c -> c == '.' } == null) {
+
+                for(idx in startIdx..endIdx) {
+                    if(mutatedSegment[idx] != '#') {
+                        if(mutatedSegment[idx] == '?') mutatedSegmentInfo.numQuestionMarks--
+                        mutatedSegmentInfo.numHashes++
+                        mutatedSegment[idx] = '#'
+                    }
+                }
+
+                if (isValidSegment(mutatedSegment, mutatedSegmentInfo)) {
+                    ++possibilities
+                } else if (mutatedSegmentInfo.numQuestionMarks > 0) {
+                    possibilities += calculatePossibilities(mutatedSegment, mutatedSegmentInfo, questionMarkIdx)
+                }
+            }
         }
 
         return possibilities
     }
 
     // Function to calculate factorial
-    fun factorial(number: Int): Long {
-        var factorial = 1L
-        for (i in 1..number) {
-            factorial *= i
+    private fun factorial(number: Int): BigInteger {
+        var factorial = BigInteger.valueOf(1)
+        for (i in 1L..number) {
+            factorial *= BigInteger.valueOf(i)
         }
         return factorial
     }
@@ -231,6 +247,7 @@ class DayTwelve : Puzzle {
             }
         }
 
+//        println("Valid segment: ${segment.concatToString()}")
         return true
 
     }
